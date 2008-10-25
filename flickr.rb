@@ -9,7 +9,7 @@ module Flickr
 
 	class Auth
 		
-		attr_reader :authenticated
+		attr_reader :authenticated, :configuration
 		
 		def initialize
 			load_configuration
@@ -78,7 +78,7 @@ module Flickr
 			end			
 		end
 
-		private
+		#private
 		def get_frob
 			request = Hash.new
 			request['method'] = 'flickr.auth.getFrob'
@@ -106,6 +106,57 @@ module Flickr
 		end
 
 	end ##### end Auth class
+	
+	class Upload
+		
+		attr_accessor :photo, :title, :description, :tags, :is_public, :is_friend, :is_family, :safety_level, :content_type, :hidden
+		
+		def initialize(photo = '', title = '', description = '', tags = '', is_public = '', is_friend = '', is_family = '', safety_level = '', content_type = '', hidden = 'optional')
+			@photo = photo
+			@title = title
+			@description = description
+			@tags = tags
+			@is_public = is_public
+			@is_friend = is_friend
+			@is_family = is_family
+			@safety_level = safety_level
+			@content_type = content_type
+			@hidden = hidden
+		end
+		
+		def upload
+			auth = Flickr::Auth.new
+
+			request = Hash.new
+			request['api_key'] = auth.configuration['api_key']
+			request['auth_token'] = auth.configuration['auth_token']
+			request['api_sig'] = auth.generate_signature(request)
+			
+			header, data = create_post_query(request, @photo)
+			http = Net::HTTP.new('api.flickr.com', 80)
+			res = http.post('/services/upload/', data, header)
+			puts res.body
+		end
+		
+		private
+		def create_post_query(request, file)
+			boundary = '------------------------AaBbCcDdEeFfGgHhIiJj'
+			header = {'Content-Type' => 'multipart/form-data; boundary=' + boundary }
+			data = "--" + boundary + "\r\n"
+			sorted_request = request.sort
+			sorted_request.each do |value|
+				data += 'Content-Disposition: form-data; name="' + value[0] + '"' + "\r\n\r\n"
+				data += value[1] + "\r\n"
+				data += "--" + boundary + "\r\n"
+			end
+			data += 'Content-Disposition: form-data; name="photo"; filename="' + file + '"' + "\r\n"
+			data += 'Content-Type: image/jpeg' + "\r\n\r\n"
+			data += IO.readlines(file).to_s + "\r\n"
+			data += "--" + boundary + "--\r\n"
+			return header, data
+		end
+		
+	end ##### end Upload class
 
 	def self.response_ok()
 		return {'status' => 'ok'}
