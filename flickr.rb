@@ -91,16 +91,26 @@ class Flickr
 		end
 	end
 	
-	def upload
+	def upload(file, title = '', description = '', tags = '', is_public = '', is_friend = '', is_family = '', safety_level = '', content_type = '', hidden = '')
 		request = {'api_key' => @configuration['api_key'], 'auth_token' => @configuration['auth_token']}
-		request['api_sig'] = auth.generate_signature(request)
+		request['title'] = title if title != ''
+		request['description'] = description if description != ''
+		request['tags'] = tags if tags != ''
+		request['is_public'] = is_public if is_public != ''
+		request['is_friend'] = is_friend if is_friend != ''
+		request['is_family'] = is_family if is_family != ''
+		request['safety_level'] = safety_level if safety_level != ''
+		request['content_type'] = content_type if content_type != ''
+		request['hidden'] = hidden if hidden != ''
 		
-		header, data = create_post_query(request, @photo)
+		request['api_sig'] = generate_signature(request)
+		
+		header, data = create_multipart_post_query(file, request)
 		http = Net::HTTP.new('api.flickr.com', 'www')
 		http.post('/services/upload/', data, header)
 	end
 	
-	def create_multipart_post_query(request, file)
+	def create_multipart_post_query(file, request)
 		boundary = '------------------------AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPp'
 		header = {'Content-Type' => 'multipart/form-data; boundary=' + boundary }
 		data = "--" + boundary + "\r\n"
