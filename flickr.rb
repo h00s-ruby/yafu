@@ -17,9 +17,9 @@ class Flickr
 	def load_configuration
 		begin
 			@configuration = YAML.load_file(CONF_FILE)
-		rescue IOError
-			@configuration = {'api_key' => '', 'secret' => '', 'frob' => '', 'auth-token' => ''}
-			save_configuration
+		rescue
+			@configuration = {'api_key' => '', 'secret' => '', 'frob' => '', 'auth_token' => ''}
+			#save_configuration
 		end
 	end
 	
@@ -27,6 +27,10 @@ class Flickr
 		File.open(CONF_FILE, 'w') do |out|
 			YAML.dump(@configuration, out)
 		end
+	end
+	
+	def get_configuration_path
+		return CONF_FILE
 	end
 	
 	def create_login_link
@@ -106,8 +110,17 @@ class Flickr
 		request['api_sig'] = generate_signature(request)
 		
 		header, data = create_multipart_post_query(file, request)
-		http = Net::HTTP.new('api.flickr.com', 'www')
-		http.post('/services/upload/', data, header)
+		http = Net::HTTP.new('api.flickr.com', 80)
+		begin
+			response = REXML::Document.new(http.post('/services/upload/', data, header).body)
+			if response.elements['rsp'].attributes['stat'] == 'ok'
+				photo = response_ok
+				photo['photo'] = response.elements['rsp/photoid'].text
+				return photo
+			end
+		rescue
+			return response_fail(response)
+		end
 	end
 	
 	def create_multipart_post_query(file, request)
