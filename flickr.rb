@@ -133,7 +133,11 @@ class Flickr
 	end
 
 	def response_fail(response)
-		return {'status' => 'fail', 'error-code' => response.elements['rsp/err'].attributes['code'], 'message' => response.elements['rsp/err'].attributes['msg']}
+		if response.class == 'Hash'
+			return response
+		elsif response.class == 'REXML::Document'
+			return {'status' => 'fail', 'error-code' => response.elements['rsp/err'].attributes['code'], 'message' => response.elements['rsp/err'].attributes['msg']}
+		end
 	end
 
 	def response_other_fail(response)
