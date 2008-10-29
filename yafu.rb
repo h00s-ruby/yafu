@@ -73,7 +73,6 @@ class Yafu
 			photo.push(gets.chomp)
 			print 'Tags: '
 			photo.push(gets.chomp)
-			photo.push('pero')
 		end
 		puts 'Uploading...'
 		response = @flickr.upload(*photo)
