@@ -64,16 +64,24 @@ class Yafu
 	
 	def upload(photo)
 		if photo.class.to_s == 'String'
-			puts "Uploading..."
-			response = @flickr.upload(photo)
-			if response['status'] == 'ok'
-				puts "Upload succesful"
-			else
-				puts "Upload failed"
-				### to do: message why upload failed
-			end
-		elsif photo.class.to_s == 'Array'
-			### to do
+			photo = [photo]
+			ARGV.clear
+			puts 'Enter photo information'
+			print 'Title: '
+			photo.push(gets.chomp)
+			print 'Description: '
+			photo.push(gets.chomp)
+			print 'Tags: '
+			photo.push(gets.chomp)
+			photo.push('pero')
+		end
+		puts 'Uploading...'
+		response = @flickr.upload(*photo)
+
+		if response['status'] == 'ok'
+			puts 'Upload succesful'
+		else
+			puts "Upload failed: #{response['message']}"
 		end
 	end
 
@@ -85,8 +93,9 @@ if ARGV.length == 1
 	yafu.check_configuration
 	yafu.upload(ARGV[0])
 elsif ARGV.length > 1
+	ARGV.delete('--no-input')
 	yafu.check_configuration
 	yafu.upload(ARGV)
 else	
-	puts "Usage: yafu file-name"
+	puts 'Usage: yafu file-name'
 end
